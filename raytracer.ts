@@ -82,6 +82,68 @@ let kernel = gpu.createKernel (
     /*----------------------------------------------------------------
      * Helper functions for use within the kernel.
      *--------------------------------------------------------------*/
+    function vectorDotProduct (V1x: number, V1y: number, V1z: number,
+                               V2x: number, V2y: number, V2z: number) {
+      return (V1x * V2x) + (V1y * V2y) + (V1z * V2z)
+    }
+
+    function unitVectorX (Vx: number, Vy: number, Vz: number) {
+      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * Vx
+    }
+
+    function unitVectorY (Vx: number, Vy: number, Vz: number) {
+      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * Vy
+    }
+
+    function unitVectorZ (Vx: number, Vy: number, Vz: number) {
+      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * Vz
+    }
+
+    function sphereNormalX (Sx: number, Sy: number, Sz: number, radius: number,
+                            Px: number, Py: number, Pz: number) {
+      let SPx = Px - Sx
+      let SPy = Py - Sy
+      let SPz = Pz - Sz
+
+      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * SPx
+    }
+
+    function sphereNormalY (Sx: number, Sy: number, Sz: number, radius: number,
+                            Px: number, Py: number, Pz: number) {
+      let SPx = Px - Sx
+      let SPy = Py - Sy
+      let SPz = Pz - Sz
+
+      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * SPy
+    }
+
+    function sphereNormalZ (Sx: number, Sy: number, Sz: number, radius: number,
+                            Px: number, Py: number, Pz: number) {
+      let SPx = Px - Sx
+      let SPy = Py - Sy
+      let SPz = Pz - Sz
+
+      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+      let div = this.constants.INFINITY
+      if (magnitude > 0) div = 1.0 / magnitude
+      return div * SPz
+    }
+
     // Find the distance from the camera point to the sphere for a ray.
     // If the ray does not intersect the sphere, return INFINITY.
     // A ray R (with origin at E and direction V) intersecting
