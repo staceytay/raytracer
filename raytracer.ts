@@ -36,13 +36,13 @@ class Vector {
 
 const enum Mode { GPU, CPU }
 const enum Thing { SPHERE, }
-const height = 600
-const width = 800
+const height = 350
+const width = 350
 
 var camera = [
   /* 0  1  2  3  4  5  6
    * px py pz vx xy xz fov */
-  0, 1, 2, 4, 4, 4, 45
+  0, 0, 0, 1, 1, 1, 165
 ]
 
 var lights = [
@@ -55,8 +55,9 @@ var lights = [
 var things = [
   /* 0    1           2 3 4 5        6       7       8       9  10 11 12
    * type this.length r g b specular lambert ambient opacity x  y  z  radius */
-  [Thing.SPHERE, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, 100, 500, 500, 40],
-  [Thing.SPHERE, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, 200, 600, 200, 20],
+  [Thing.SPHERE, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 100, 500, 500, 100],
+  [Thing.SPHERE, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, -8, 0, 2, 1],
+  [Thing.SPHERE, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, -4, 3.5, -2, 0.5],
 ]
 
 let opt = (mode: string) => {
