@@ -42,7 +42,7 @@ const width = 350
 var camera = [
   /* 0  1  2  3  4  5  6
    * px py pz vx xy xz fov */
-  0, 0, 0, 1, 1, 1, 165
+  0, 0, 16, 0, 0, 1, 45
 ]
 
 var lights = [
