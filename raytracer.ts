@@ -308,7 +308,7 @@ let kernel = gpu.createKernel (
   }, opt ('gpu'))
 
 
-function render (camera: number[], lights: number[][], things: number[][]) {
+function computeRays (camera: number[]) {
   let cameraPoint = new Vector (camera[0], camera[1], camera[2])
   let cameraVector = new Vector (camera[3], camera[4], camera[5])
   let eyeVector = Vector.norm (Vector.minus (cameraVector, cameraPoint))
@@ -337,9 +337,43 @@ function render (camera: number[], lights: number[][], things: number[][]) {
     }
   }
 
-  kernel (camera, lights, things, rays)
-  let canvas = kernel.getCanvas ();
-  document.getElementsByTagName('body')[0].appendChild(canvas);
+  return rays
 }
 
-render (camera, lights, things)
+let canvas = kernel.getCanvas ()
+document.getElementById('container').appendChild(canvas);
+
+var fps = {
+  startTime: 0,
+  frameNumber: 0,
+  getFPS: function () {
+    this.frameNumber++;
+    let d = new Date ().getTime ()
+    let currentTime = (d - this.startTime) / 1000
+    let result = Math.floor (this.frameNumber / currentTime)
+
+    if (currentTime > 1) {
+      this.startTime = new Date ().getTime ()
+      this.frameNumber = 0
+    }
+    return result;
+  }
+}
+
+let f = document.getElementById('fps')
+let rays = computeRays (camera)
+function renderLoop () {
+  f.innerHTML = fps.getFPS ()
+  kernel (camera, lights, things, rays)
+
+  let canvas = kernel.getCanvas ()
+  let cv = document.getElementsByTagName('canvas')[0]
+  cv.parentNode.replaceChild (canvas, cv)
+
+  things.forEach (function (thing) {
+    thing[10] = (thing[10] + 0.1) % 10
+  })
+
+  requestAnimationFrame (renderLoop)
+}
+window.onload = renderLoop;
