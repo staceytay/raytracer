@@ -67,10 +67,9 @@ let opt = (mode: string) => {
     graphical: true,
     safeTextureReadHack: false,
     constants: {
-      INFINITY: 2 ** 31,
+      INFINITY: Number.MAX_SAFE_INTEGER,
       LIGHTSCOUNT: lights.length,
       THINGSCOUNT: things.length,
-
     },
     mode: mode
   }
