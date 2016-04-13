@@ -175,58 +175,20 @@ let kernel = gpu.createKernel (
         return v - Math.sqrt (discriminant)
       }
     }
-    // // This function checks if a point on an object in the scene is lighted
-    // function isLighted (light: number, p1: number, p2: number, p3: number) {
-    //   let V = [
-    //     p1 - lights[light][0],
-    //     p2 - lights[light][1],
-    //     p3 - lights[light][2]
-    //   ]
-    //   let magnitude = Math.sqrt (V[0] * V[0] + V[1] * V[1] + V[2] * V[2])
-    //   let div = (magnitude === 0) ? this.constants.INFINITY : 1.0 / magnitude
-    //   V = [
-    //     div * V[0],
-    //     div * V[1],
-    //     div * V[2]
-    //   ]
-
-    //   var closest = this.constants.THINGSCOUNT
-    //   var closestDistance = this.constants.INFINITY
-    //   for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
-    //     // let distance = sphereIntersectionDistance (i, V1, V2, V3)
-    //     let distance = this.constants.INFINITY
-    //     let EO1 = things[i][9] - p1
-    //     let EO2 = things[i][10] - p2
-    //     let EO3 = things[i][11] - p3
-    //     let v = (EO1 * V[0]) + (EO2 * V[1]) + (EO3 * V[2])
-    //     let radius = things[i][12]
-    //     let discriminant = (radius * radius)
-    //       - ((EO1 * EO1) + (EO2 * EO2) + (EO3 * EO3))
-    //       + (v * v)
-    //     if (discriminant >= 0) {
-    //       // Length of EP.
-    //       distance = v - Math.sqrt (discriminant)
-    //     }
-
-    //     if (distance < closestDistance) {
-    //       closest = i
-    //       closestDistance = distance
-    //     }
-    //   }
-
-    //   return closestDistance > -0.005
-    // }
 
     /*----------------------------------------------------------------
      * Trace.
      *--------------------------------------------------------------*/
-    // 1. Get ray that hits this point on the canvas.
+    // 1. Get ray that hits this point on the canvas. A ray consists of
+    //    its point, P and vector, V.
     let x = this.thread.x
     let y = this.thread.y
-
-    let rayX = rays[x][y][0]
-    let rayY = rays[x][y][1]
-    let rayZ = rays[x][y][2]
+    let rayPx = camera[0]
+    let rayPy = camera[1]
+    let rayPz = camera[2]
+    let rayVx = rays[x][y][0]
+    let rayVy = rays[x][y][1]
+    let rayVz = rays[x][y][2]
 
     // 2. Get first intersection, if any.
     var closest = this.constants.THINGSCOUNT
@@ -234,7 +196,7 @@ let kernel = gpu.createKernel (
     for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
       let distance = sphereIntersectionDistance (
         things[i][9], things[i][10], things[i][11], things[i][12],
-        camera[0], camera[1], camera[2], rayX, rayY, rayZ
+        rayPx, rayPy, rayPz, rayVx, rayVy, rayVz
       )
       if (distance < closestDistance) {
         closest = i
@@ -242,39 +204,100 @@ let kernel = gpu.createKernel (
       }
     }
 
-    // 3. If the ray intersects an object, find its colour
+    // 3. If the ray intersects an object, find its colour.
     if (closestDistance < this.constants.INFINITY) {
-      this.color (things[closest][2], things[closest][3], things[closest][4])
-      // // Scale ray vector
-      // v1 = closestDistance * v1
-      // v2 = closestDistance * v2
-      // v3 = closestDistance * v3
-      // // Find point of intersection, P
-      // let p1 = camera[0] + v1 * closestDistance
-      // let p2 = camera[1] + v2 * closestDistance
-      // let p3 = camera[2] + v3 * closestDistance
+      // Find point of intersection, P.
+      let px = rayPx + rayVx * closestDistance
+      let py = rayPy + rayVy * closestDistance
+      let pz = rayPz + rayVz * closestDistance
 
-      // let lambert = 0
-      // // Compute Lambert shading.
-      // if (things[closest][6] > 0) {
-      //   for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
-      //     if (isLighted (i, p1, p2, p3)) {
+      // Find sphere normal.
+      let sx = things[closest][9]
+      let sy = things[closest][10]
+      let sz = things[closest][11]
+      let sRadius = things[closest][12]
+      let snVx = sphereNormalX (sx, sy, sz, sRadius, px, py, pz)
+      let snVy = sphereNormalY (sx, sy, sz, sRadius, px, py, pz)
+      let snVz = sphereNormalZ (sx, sy, sz, sRadius, px, py, pz)
 
-      //       var contribution =
-      //         Vector.dotProduct(
-      //           Vector.unitVector(
-      //             Vector.subtract(
-      //               lightPoint,
-      //               pointAtTime)
-      //           ),
-      //           normal)
+      // Sphere colour and lambertian reflectance.
+      let sRed = things[closest][2]
+      let sGreen = things[closest][3]
+      let sBlue = things[closest][4]
+      let lambert = things[closest][6]
 
+      // 3a. Compute Lambert shading.
+      let lambertAmount = 0
+      if (lambert > 0) {
+        for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
+          // Check is if light is visible on this point.
+          let LPx =  px - lights[i][0]
+          let LPy = py - lights[i][1]
+          let LPz = pz - lights[i][2]
+          let uLPx = unitVectorX (LPx, LPy, LPz)
+          let uLPy = unitVectorY (LPx, LPy, LPz)
+          let uLPz = unitVectorZ (LPx, LPy, LPz)
 
+          var closest = this.constants.THINGSCOUNT
+          var closestDistance = this.constants.INFINITY
+          for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+            // Find sphere intersection distance from light source
+            let distance = this.constants.INFINITY
+            let EOx = things[i][9] - px
+            let EOy = things[i][10] - py
+            let EOz = things[i][11] - pz
+            let v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz)
+            let radius = things[i][12]
+            let discriminant = (radius * radius)
+              - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
+              + (v * v)
+            // if (discriminant >= 0) {
+            if (discriminant > 0) {
+              // Length of EP.
+              distance = v - Math.sqrt (discriminant)
+            }
 
-      //       if (contribution > 0) lambertAmount += contribution;
-      //     }
-      //   }
-      // }
+            if (distance < closestDistance) {
+              closest = i
+              closestDistance = distance
+            }
+          }
+
+          // If isLighted.
+          if (closestDistance > -0.005) {
+            let PLx = -LPx
+            let PLy = -LPy
+            let PLz = -LPz
+
+            let uPLx = unitVectorX (PLx, PLy, PLz)
+            let uPLy = unitVectorY (PLx, PLy, PLz)
+            let uPLz = unitVectorZ (PLx, PLy, PLz)
+
+            let contribution = vectorDotProduct (uPLx, uPLy, uPLz,
+                                                 snVx, snVy, snVz)
+
+            if (contribution > 0) lambertAmount += contribution
+          }
+        }
+      }
+      lambertAmount = Math.min(1, lambertAmount)
+
+      // 3b. Compute specular reflection.
+      let specular = things[closest][5]
+      let cVx = 0
+      let cVy = 0
+      let cVz = 0
+      if (specular > 0) {
+
+      }
+
+      // 3c. Combine and set colour at point.
+      let ambient = things[closest][7]
+      let red = cVx + (sRed * lambertAmount * lambert) + (sRed * ambient)
+      let green = cVy + (sGreen * lambertAmount * lambert) + (sGreen * ambient)
+      let blue = cVz + (sBlue * lambertAmount * lambert) + (sBlue * ambient)
+
+      this.color (red, green, blue)
     }
     else {
       // Default canvas background colour
