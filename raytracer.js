@@ -1,4 +1,3 @@
-/// <reference path="vendor/gpu.d.ts" />
 var Vector = (function () {
     function Vector(x, y, z) {
         this.x = x;
@@ -33,27 +32,30 @@ var Vector = (function () {
     };
     return Vector;
 }());
-var height = 352;
-var width = height;
+var Mode;
+(function (Mode) {
+    Mode[Mode["GPU"] = 0] = "GPU";
+    Mode[Mode["CPU"] = 1] = "CPU";
+})(Mode || (Mode = {}));
+var Thing;
+(function (Thing) {
+    Thing[Thing["SPHERE"] = 0] = "SPHERE";
+})(Thing || (Thing = {}));
+var height = 350;
+var width = 350;
 var camera = [
-    /* 0  1  2  3  4  5  6
-     * px py pz vx xy xz fov */
     0, 0, 16, 0, 0, 1, 45
 ];
 var lights = [
-    /* 0  1  2
-     * x  y  z */
-  [-7.5, 0.5, -1.5],
-  [-8.5, -0.5, -2.5],
-  [-3.5, 5, 2.5],
-  [-4.5, 3, 1.5],
+    [-7.5, 0.5, -1.5],
+    [-8.5, -0.5, -2.5],
+    [-3.5, 5, 2.5],
+    [-4.5, 3, 1.5],
 ];
 var things = [
-    /* 0    1           2 3 4 5        6       7       8       9  10 11 12
-     * type this.length r g b specular lambert ambient opacity x  y  z  radius */
-    [0 /* SPHERE */, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, -2, 0, -2, 1],
-    [0 /* SPHERE */, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 0, 0, 0, 1],
-    [0 /* SPHERE */, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, 2, 0, 2, 1],
+    [0, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, -2, 0, -2, 1],
+    [0, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 0, 0, 0, 1],
+    [0, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, 2, 0, 2, 1],
 ];
 var opt = function (mode) {
     return {
@@ -71,9 +73,6 @@ var opt = function (mode) {
 };
 var gpu = new GPU();
 var kernel = gpu.createKernel(function (camera, lights, things, rays) {
-    /*----------------------------------------------------------------
-     * Helper functions for use within the kernel.
-     *--------------------------------------------------------------*/
     function vectorDotProduct(V1x, V1y, V1z, V2x, V2y, V2z) {
         return (V1x * V2x) + (V1y * V2y) + (V1z * V2z);
     }
@@ -128,18 +127,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
             div = 1.0 / magnitude;
         return div * SPz;
     }
-    // Find the distance from the camera point to the sphere for a ray.
-    // If the ray does not intersect the sphere, return INFINITY.
-    // A ray R (with origin at E and direction V) intersecting
-    // a sphere, with center at O and radius r, at point P.
-    // v = dot_product (EO, V)
-    // discriminant = r^2 - (dot_product (EO, EO) - v^2)
-    // if (disc < 0)
-    //   no intersection
-    // else
-    //   d = sqrt (discriminant)
-    //   P = E + (v - d) * V
-    // Formula from https://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
     function sphereIntersectionDistance(Sx, Sy, Sz, radius, Ex, Ey, Ez, Vx, Vy, Vz) {
         var EOx = Sx - Ex;
         var EOy = Sy - Ey;
@@ -152,15 +139,9 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
             return this.constants.INFINITY;
         }
         else {
-            // Length of EP.
             return v - Math.sqrt(discriminant);
         }
     }
-    /*----------------------------------------------------------------
-     * Trace.
-     *--------------------------------------------------------------*/
-    // 1. Get ray that hits this point on the canvas. A ray consists of
-    //    its point, P and vector, V.
     var x = this.thread.x;
     var y = this.thread.y;
     var rayPx = camera[0];
@@ -169,7 +150,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
     var rayVx = rays[x][y][0];
     var rayVy = rays[x][y][1];
     var rayVz = rays[x][y][2];
-    // 2. Get first intersection, if any.
     var closest = this.constants.THINGSCOUNT;
     var closestDistance = this.constants.INFINITY;
     for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
@@ -179,13 +159,10 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
             closestDistance = distance;
         }
     }
-    // 3. If the ray intersects an object, find its colour.
     if (closestDistance < this.constants.INFINITY) {
-        // Find point of intersection, P.
         var px = rayPx + rayVx * closestDistance;
         var py = rayPy + rayVy * closestDistance;
         var pz = rayPz + rayVz * closestDistance;
-        // Find sphere normal.
         var sx = things[closest][9];
         var sy = things[closest][10];
         var sz = things[closest][11];
@@ -193,16 +170,13 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
         var snVx = sphereNormalX(sx, sy, sz, sRadius, px, py, pz);
         var snVy = sphereNormalY(sx, sy, sz, sRadius, px, py, pz);
         var snVz = sphereNormalZ(sx, sy, sz, sRadius, px, py, pz);
-        // Sphere colour and lambertian reflectance.
         var sRed = things[closest][2];
         var sGreen = things[closest][3];
         var sBlue = things[closest][4];
         var lambert = things[closest][6];
-        // 3a. Compute Lambert shading.
         var lambertAmount = 0;
         if (lambert > 0) {
             for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
-                // Check is if light is visible on this point.
                 var LPx = px - lights[i][0];
                 var LPy = py - lights[i][1];
                 var LPz = pz - lights[i][2];
@@ -212,7 +186,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
                 var closest = this.constants.THINGSCOUNT;
                 var closestDistance = this.constants.INFINITY;
                 for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
-                    // Find sphere intersection distance from light source
                     var distance = this.constants.INFINITY;
                     var EOx = things[i][9] - px;
                     var EOy = things[i][10] - py;
@@ -222,9 +195,7 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
                     var discriminant = (radius * radius)
                         - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                         + (v * v);
-                    // if (discriminant >= 0) {
                     if (discriminant > 0) {
-                        // Length of EP.
                         distance = v - Math.sqrt(discriminant);
                     }
                     if (distance < closestDistance) {
@@ -232,7 +203,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
                         closestDistance = distance;
                     }
                 }
-                // If isLighted.
                 if (closestDistance > -0.005) {
                     var PLx = -LPx;
                     var PLy = -LPy;
@@ -247,14 +217,12 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
             }
         }
         lambertAmount = Math.min(1, lambertAmount);
-        // 3b. Compute specular reflection.
         var specular = things[closest][5];
         var cVx = 0;
         var cVy = 0;
         var cVz = 0;
         if (specular > 0) {
         }
-        // 3c. Combine and set colour at point.
         var ambient = things[closest][7];
         var red = cVx + (sRed * lambertAmount * lambert) + (sRed * ambient);
         var green = cVy + (sGreen * lambertAmount * lambert) + (sGreen * ambient);
@@ -262,7 +230,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
         this.color(red, green, blue);
     }
     else {
-        // Default canvas background colour
         this.color(0.95, 0.95, 0.95);
     }
 }, opt('gpu'));
@@ -312,7 +279,7 @@ var fps = {
 var f = document.getElementById('fps');
 var rays = computeRays(camera);
 function renderLoop() {
-    f.innerHTML = fps.getFPS();
+    f.innerHTML = fps.getFPS.toString();
     kernel(camera, lights, things, rays);
     var canvas = kernel.getCanvas();
     var cv = document.getElementsByTagName('canvas')[0];
@@ -323,3 +290,4 @@ function renderLoop() {
     requestAnimationFrame(renderLoop);
 }
 window.onload = renderLoop;
+//# sourceMappingURL=raytracer.js.map
