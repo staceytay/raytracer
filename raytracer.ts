@@ -536,6 +536,20 @@ document.getElementById (stringOfMode (initialMode)).checked = true
 document.getElementById ('container')
   .appendChild ((initialMode === Mode.CPU) ? cpuCanvas : gpuCanvas)
 
+let requestId = null
+let togglePause = () => {
+  if (requestId) {
+    if (document.getElementById ('pause').value === 'Pause') {
+      cancelAnimationFrame (requestId)
+      document.getElementById ('pause').value = 'Play'
+    }
+    else {
+      requestId = requestAnimationFrame (renderLoop)
+      document.getElementById ('pause').value = 'Pause'
+    }
+  }
+}
+
 let f = document.getElementById('fps')
 function renderLoop () {
   f.innerHTML = fps.getFPS ().toString ()
@@ -565,6 +579,6 @@ function renderLoop () {
       thing[10] = -1 * height
   })
 
-  requestAnimationFrame (renderLoop)
+  requestId = requestAnimationFrame (renderLoop)
 }
 window.onload = renderLoop;
