@@ -40,29 +40,17 @@ var camera = [
      * px py pz vx xy xz fov */
     0, 0, 16, 0, 0, 1, 45
 ];
-// var camera = [
-//   /* 0  1  2  3  4  5  6
-//    * px py pz vx xy xz fov */
-//   10, 22, 0, 1, 2, 3, 90
-// ]
 var lights = [
     /* 0  1  2
      * x  y  z */
-    // [-5, 5, 5]
-    // [101, 501, 501],
-    // [99, 499, 499],
-    // [3,3,3],
-    [1, 2, 2],
-    // [-6.5, 0.5, -1.5],
-    // [-7.5, 0.5, -1.5],
-    // [-8.5, -0.5, -2.5],
-    // [-10, 0, 0],
-    [-3, 5, 2],
+  [-7.5, 0.5, -1.5],
+  [-8.5, -0.5, -2.5],
+  [-3.5, 5, 2.5],
+  [-4.5, 3, 1.5],
 ];
 var things = [
     /* 0    1           2 3 4 5        6       7       8       9  10 11 12
      * type this.length r g b specular lambert ambient opacity x  y  z  radius */
-    // [Thing.SPHERE, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 100, 500, 500, 100],
     [0 /* SPHERE */, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, -2, 0, -2, 1],
     [0 /* SPHERE */, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 0, 0, 0, 1],
     [0 /* SPHERE */, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, 2, 0, 2, 1],
@@ -278,7 +266,6 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
         this.color(0.95, 0.95, 0.95);
     }
 }, opt('gpu'));
-// http://www.comp.nus.edu.sg/~hugh/CS3211/demm.html
 function computeRays(camera) {
     var cameraPoint = new Vector(camera[0], camera[1], camera[2]);
     var cameraVector = new Vector(camera[3], camera[4], camera[5]);
@@ -293,8 +280,6 @@ function computeRays(camera) {
     var cameraheight = halfHeight * 2;
     var pixelWidth = camerawidth / (width - 1);
     var pixelHeight = cameraheight / (height - 1);
-    // WHY not use raysX, raysY, and raysZ???
-    // You can only pass in at most 8MB
     var rays = [];
     for (var x = 0; x < width; x++) {
         rays.push([]);
@@ -338,4 +323,3 @@ function renderLoop() {
     requestAnimationFrame(renderLoop);
 }
 window.onload = renderLoop;
-//# sourceMappingURL=raytracer.js.map
