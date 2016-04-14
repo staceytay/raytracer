@@ -363,7 +363,7 @@ var fps = {
 let f = document.getElementById('fps')
 let rays = computeRays (camera)
 function renderLoop () {
-  f.innerHTML = fps.getFPS ()
+  f.innerHTML = fps.getFPS ().toString ()
   kernel (camera, lights, things, rays)
 
   let canvas = kernel.getCanvas ()
