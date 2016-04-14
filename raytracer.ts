@@ -80,7 +80,9 @@ let opt = (mode: string) => {
 let gpu = new GPU ()
 let kernel = gpu.createKernel (
   function (camera: number[], lights: number[][], things: number[][],
-            rays: number[][][]) {
+            eyeV: number[], rightV: number[], upV: number[],
+            halfHeight: number, halfWidth: number,
+            pixelHeight: number, pixelWidth: number) {
     /*----------------------------------------------------------------
      * Helper functions for use within the kernel.
      *--------------------------------------------------------------*/
@@ -203,12 +205,26 @@ let kernel = gpu.createKernel (
     //    its point, P and vector, V.
     let x = this.thread.x
     let y = this.thread.y
+
     let rayPx = camera[0]
     let rayPy = camera[1]
     let rayPz = camera[2]
-    let rayVx = rays[x][y][0]
-    let rayVy = rays[x][y][1]
-    let rayVz = rays[x][y][2]
+
+    let xCompVx = ((x * pixelWidth) - halfWidth) * rightV[0]
+    let xCompVy = ((x * pixelWidth) - halfWidth) * rightV[1]
+    let xCompVz = ((x * pixelWidth) - halfWidth) * rightV[2]
+
+    let yCompVx = ((y * pixelHeight) - halfHeight) * upV[0]
+    let yCompVy = ((y * pixelHeight) - halfHeight) * upV[1]
+    let yCompVz = ((y * pixelHeight) - halfHeight) * upV[2]
+
+    let sumVx = eyeV[0] + xCompVx + yCompVx
+    let sumVy = eyeV[1] + xCompVy + yCompVy
+    let sumVz = eyeV[2] + xCompVz + yCompVz
+
+    let rayVx = unitVectorX (sumVx, sumVy, sumVz)
+    let rayVy = unitVectorY (sumVx, sumVy, sumVz)
+    let rayVz = unitVectorZ (sumVx, sumVy, sumVz)
 
     // 2. Get first intersection, if any.
     var closest = this.constants.THINGSCOUNT
@@ -445,38 +461,6 @@ let kernel = gpu.createKernel (
   }, opt ('gpu'))
 
 
-function computeRays (camera: number[]) {
-  let cameraPoint = new Vector (camera[0], camera[1], camera[2])
-  let cameraVector = new Vector (camera[3], camera[4], camera[5])
-  let eyeVector = Vector.norm (Vector.minus (cameraVector, cameraPoint))
-
-  let vpRight = Vector.norm (Vector.cross (eyeVector, new Vector (0, 1, 0)))
-  let vpUp = Vector.norm (Vector.cross (vpRight, eyeVector))
-
-  let fovRadians = Math.PI * (camera[6] / 2) / 180
-  let heightWidthRatio = height / width
-  let halfWidth = Math.tan (fovRadians)
-  let halfHeight = heightWidthRatio * halfWidth
-  let camerawidth = halfWidth * 2
-  let cameraheight = halfHeight * 2
-  let pixelWidth = camerawidth / (width - 1)
-  let pixelHeight = cameraheight / (height - 1)
-
-  var rays = []
-  for (var x = 0; x < width; x++) {
-    rays.push ([])
-    for (var y = 0; y < height; y++) {
-      let xcomp = Vector.times ((x * pixelWidth) - halfWidth, vpRight)
-      let ycomp = Vector.times ((y * pixelHeight) - halfHeight, vpUp)
-
-      let ray = Vector.norm (Vector.plus (Vector.plus (eyeVector, xcomp), ycomp));
-      rays[x].push (ray.toArray ())
-    }
-  }
-
-  return rays
-}
-
 let canvas = kernel.getCanvas ()
 document.getElementById('container').appendChild(canvas);
 
@@ -497,11 +481,28 @@ var fps = {
   }
 }
 
+let cameraPoint = new Vector (camera[0], camera[1], camera[2])
+let cameraVector = new Vector (camera[3], camera[4], camera[5])
+let eyeVector = Vector.norm (Vector.minus (cameraVector, cameraPoint))
+
+let vpRight = Vector.norm (Vector.cross (eyeVector, new Vector (0, 1, 0)))
+let vpUp = Vector.norm (Vector.cross (vpRight, eyeVector))
+
+let fovRadians = Math.PI * (camera[6] / 2) / 180
+let heightWidthRatio = height / width
+let halfWidth = Math.tan (fovRadians)
+let halfHeight = heightWidthRatio * halfWidth
+let cameraWidth = halfWidth * 2
+let cameraHeight = halfHeight * 2
+let pixelWidth = cameraWidth / (width - 1)
+let pixelHeight = cameraHeight / (height - 1)
+
 let f = document.getElementById('fps')
-let rays = computeRays (camera)
 function renderLoop () {
   f.innerHTML = fps.getFPS ().toString ()
-  kernel (camera, lights, things, rays)
+  kernel (camera, lights, things,
+          eyeVector.toArray (), vpRight.toArray (), vpUp.toArray (),
+          halfHeight, halfWidth, pixelHeight, pixelWidth)
 
   let canvas = kernel.getCanvas ()
   let cv = document.getElementsByTagName('canvas')[0]
