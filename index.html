@@ -18,6 +18,9 @@
         display: block;
         margin: auto;
       }
+      .center {
+        text-align: center;
+      }
       #container {
         margin: auto;
         max-width: 800px;
@@ -30,6 +33,10 @@
 
   <body>
     <div id="container">
+      <div class="center">
+        <label for="cpu"><input type="radio" name="mode" value="cpu" id="cpu" />CPU</label>
+        <label for="gpu"><input type="radio" name="mode" value="gpu" id="gpu" />GPU</label>
+      </div>
       <div id="fps"></div>
     </div>
     <script src="vendor/gpu.min.js"></script>
