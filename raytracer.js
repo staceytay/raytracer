@@ -195,7 +195,7 @@ var kernel = gpu.createKernel(function (camera, lights, things, rays) {
                     var discriminant = (radius * radius)
                         - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                         + (v * v);
-                    if (discriminant > 0) {
+                    if (discriminant >= 0) {
                         distance = v - Math.sqrt(discriminant);
                     }
                     if (distance < closestDistance) {
@@ -279,7 +279,7 @@ var fps = {
 var f = document.getElementById('fps');
 var rays = computeRays(camera);
 function renderLoop() {
-    f.innerHTML = fps.getFPS.toString();
+    f.innerHTML = fps.getFPS().toString();
     kernel(camera, lights, things, rays);
     var canvas = kernel.getCanvas();
     var cv = document.getElementsByTagName('canvas')[0];
