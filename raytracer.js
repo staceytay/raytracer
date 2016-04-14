@@ -391,6 +391,19 @@ var cpuCanvas = cpuKernel.getCanvas();
 document.getElementById(stringOfMode(initialMode)).checked = true;
 document.getElementById('container')
     .appendChild((initialMode === 1) ? cpuCanvas : gpuCanvas);
+var requestId = null;
+var togglePause = function () {
+    if (requestId) {
+        if (document.getElementById('pause').value === 'Pause') {
+            cancelAnimationFrame(requestId);
+            document.getElementById('pause').value = 'Play';
+        }
+        else {
+            requestId = requestAnimationFrame(renderLoop);
+            document.getElementById('pause').value = 'Pause';
+        }
+    }
+};
 var f = document.getElementById('fps');
 function renderLoop() {
     f.innerHTML = fps.getFPS().toString();
@@ -413,12 +426,7 @@ function renderLoop() {
         else
             thing[10] = -1 * height;
     });
-    requestAnimationFrame(renderLoop);
+    requestId = requestAnimationFrame(renderLoop);
 }
 window.onload = renderLoop;
-var replaceCanvas = function () {
-    var canvas = (document.getElementById('cpu').checked) ? gpuCanvas : cpuCanvas;
-    var cv = document.getElementsByTagName('canvas')[0];
-    cv.parentNode.replaceChild(canvas, cv);
-};
 //# sourceMappingURL=raytracer.js.map
