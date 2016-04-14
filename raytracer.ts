@@ -509,7 +509,11 @@ function renderLoop () {
   cv.parentNode.replaceChild (canvas, cv)
 
   things.forEach (function (thing) {
-    thing[10] = (thing[10] + 0.1) % 10
+    let height = this.height / (halfHeight * 2 * 100)
+    if (thing[10] < height)
+      thing[10] = (thing[10] + 0.02) % (height + 1)
+    else
+      thing[10] = -1 * height
   })
 
   requestAnimationFrame (renderLoop)
