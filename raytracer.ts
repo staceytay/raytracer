@@ -36,8 +36,8 @@ class Vector {
 
 const enum Mode { GPU, CPU }
 const enum Thing { SPHERE, }
-const height = 350
-const width = 350
+const height = 600
+const width = height
 
 var camera = [
   /* 0  1  2  3  4  5  6
