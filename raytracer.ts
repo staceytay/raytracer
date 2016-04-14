@@ -57,9 +57,18 @@ var lights = [
 var things = [
   /* 0    1           2 3 4 5        6       7       8       9  10 11 12
    * type this.length r g b specular lambert ambient opacity x  y  z  radius */
-  [Thing.SPHERE, 13, 1.0, 0.0, 0.0, 0.2, 0.7, 0.1, 1.0, -2, 0, -2, 1],
-  [Thing.SPHERE, 13, 0.0, 1.0, 0.0, 0.2, 0.7, 0.1, 1.0, 0, 0, 0, 1],
-  [Thing.SPHERE, 13, 0.0, 0.0, 1.0, 0.2, 0.7, 0.1, 1.0, 2, 0, 2, 1],
+  [Thing.SPHERE, 13,
+   1.0, 0.0, 0.0,
+   0.3, 0.7, 0.2, 1.0,
+   -2, 0, -2, 1],
+  [Thing.SPHERE, 13,
+   0.0, 1.0, 0.0,
+   0.3, 0.7, 0.2, 1.0,
+   0, 0, 0, 1],
+  [Thing.SPHERE, 13,
+   0.0, 0.0, 1.0,
+   0.3, 0.7, 0.2, 1.0,
+   2, 0, 2, 1],
 ]
 
 let opt = (mode: string) => {
