@@ -69,139 +69,141 @@ var things = [
    2, 0, 2, 1],
 ]
 
+let constants = {
+  INFINITY: Number.MAX_SAFE_INTEGER,
+  LIGHTSCOUNT: lights.length,
+  THINGSCOUNT: things.length,
+}
+
 let opt = (mode: string) => {
   return {
-    dimensions: [width, height],
+    constants: constants,
     debug: true,
+    dimensions: [width, height],
     graphical: true,
+    mode: mode,
     safeTextureReadHack: false,
-    constants: {
-      INFINITY: Number.MAX_SAFE_INTEGER,
-      LIGHTSCOUNT: lights.length,
-      THINGSCOUNT: things.length,
-    },
-    mode: mode
   }
 }
 
 let gpu = new GPU ()
+/*----------------------------------------------------------------
+ * Helper functions for use within the kernel.
+ *--------------------------------------------------------------*/
+function vectorDotProduct (V1x: number, V1y: number, V1z: number,
+                           V2x: number, V2y: number, V2z: number) {
+  return (V1x * V2x) + (V1y * V2y) + (V1z * V2z)
+}
+function unitVectorX (Vx: number, Vy: number, Vz: number) {
+  let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
+  let div = 1.0 / magnitude
+  return div * Vx
+}
+function unitVectorY (Vx: number, Vy: number, Vz: number) {
+  let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
+  let div = 1.0 / magnitude
+  return div * Vy
+}
+function unitVectorZ (Vx: number, Vy: number, Vz: number) {
+  let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
+  let div = 1.0 / magnitude
+  return div * Vz
+}
+function sphereNormalX (Sx: number, Sy: number, Sz: number, radius: number,
+                        Px: number, Py: number, Pz: number) {
+  let SPx = Px - Sx
+  let SPy = Py - Sy
+  let SPz = Pz - Sz
+
+  let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+  let div = this.constants.INFINITY
+  if (magnitude > 0) div = 1.0 / magnitude
+  return div * SPx
+}
+function sphereNormalY (Sx: number, Sy: number, Sz: number, radius: number,
+                        Px: number, Py: number, Pz: number) {
+  let SPx = Px - Sx
+  let SPy = Py - Sy
+  let SPz = Pz - Sz
+
+  let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+  let div = this.constants.INFINITY
+  if (magnitude > 0) div = 1.0 / magnitude
+  return div * SPy
+}
+function sphereNormalZ (Sx: number, Sy: number, Sz: number, radius: number,
+                        Px: number, Py: number, Pz: number) {
+  let SPx = Px - Sx
+  let SPy = Py - Sy
+  let SPz = Pz - Sz
+
+  let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
+  let div = this.constants.INFINITY
+  if (magnitude > 0) div = 1.0 / magnitude
+  return div * SPz
+}
+function vectorReflectX (Vx: number, Vy: number, Vz: number,
+                         Nx: number, Ny: number, Nz: number) {
+  let V1x = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nx
+  return (V1x * 2) - Vx
+}
+function vectorReflectY (Vx: number, Vy: number, Vz: number,
+                         Nx: number, Ny: number, Nz: number) {
+  let V1y = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Ny
+  return (V1y * 2) - Vy
+}
+function vectorReflectZ (Vx: number, Vy: number, Vz: number,
+                         Nx: number, Ny: number, Nz: number) {
+  let V1z = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nz
+  return (V1z * 2) - Vz
+}
+// Find the distance from the camera point to the sphere for a ray.
+// If the ray does not intersect the sphere, return INFINITY.
+// A ray R (with origin at E and direction V) intersecting
+// a sphere, with center at O and radius r, at point P.
+// v = dot_product (EO, V)
+// discriminant = r^2 - (dot_product (EO, EO) - v^2)
+// if (disc < 0)
+//   no intersection
+// else
+//   d = sqrt (discriminant)
+//   P = E + (v - d) * V
+// Formula from https://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
+function sphereIntersectionDistance (Sx: number, Sy: number, Sz: number,
+                                     radius: number,
+                                     Ex: number, Ey: number, Ez: number,
+                                     Vx: number, Vy: number, Vz: number) {
+  let EOx = Sx - Ex
+  let EOy = Sy - Ey
+  let EOz = Sz - Ez
+  let v = (EOx * Vx) + (EOy * Vy) + (EOz * Vz)
+  let discriminant = (radius * radius)
+    - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
+    + (v * v)
+  if (discriminant < 0) {
+    return this.constants.INFINITY
+  }
+  else {
+    // Length of EP.
+    return v - Math.sqrt (discriminant)
+  }
+}
+
+let kernelFunctions = [
+  vectorDotProduct,
+  unitVectorX, unitVectorY, unitVectorZ,
+  sphereNormalX, sphereNormalY, sphereNormalZ,
+  vectorReflectX, vectorReflectY, vectorReflectZ,
+  sphereIntersectionDistance
+]
+
+kernelFunctions.forEach(f => gpu.addFunction(f))
+
 let kernel = gpu.createKernel (
   function (camera: number[], lights: number[][], things: number[][],
             eyeV: number[], rightV: number[], upV: number[],
             halfHeight: number, halfWidth: number,
             pixelHeight: number, pixelWidth: number) {
-    /*----------------------------------------------------------------
-     * Helper functions for use within the kernel.
-     *--------------------------------------------------------------*/
-    function vectorDotProduct (V1x: number, V1y: number, V1z: number,
-                               V2x: number, V2y: number, V2z: number) {
-      return (V1x * V2x) + (V1y * V2y) + (V1z * V2z)
-    }
-
-    function unitVectorX (Vx: number, Vy: number, Vz: number) {
-      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
-      let div = 1.0 / magnitude
-      return div * Vx
-    }
-
-    function unitVectorY (Vx: number, Vy: number, Vz: number) {
-      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
-      let div = 1.0 / magnitude
-      return div * Vy
-    }
-
-    function unitVectorZ (Vx: number, Vy: number, Vz: number) {
-      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
-      let div = 1.0 / magnitude
-      return div * Vz
-    }
-
-    function sphereNormalX (Sx: number, Sy: number, Sz: number, radius: number,
-                            Px: number, Py: number, Pz: number) {
-      let SPx = Px - Sx
-      let SPy = Py - Sy
-      let SPz = Pz - Sz
-
-      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
-      let div = this.constants.INFINITY
-      if (magnitude > 0) div = 1.0 / magnitude
-      return div * SPx
-    }
-
-    function sphereNormalY (Sx: number, Sy: number, Sz: number, radius: number,
-                            Px: number, Py: number, Pz: number) {
-      let SPx = Px - Sx
-      let SPy = Py - Sy
-      let SPz = Pz - Sz
-
-      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
-      let div = this.constants.INFINITY
-      if (magnitude > 0) div = 1.0 / magnitude
-      return div * SPy
-    }
-
-    function sphereNormalZ (Sx: number, Sy: number, Sz: number, radius: number,
-                            Px: number, Py: number, Pz: number) {
-      let SPx = Px - Sx
-      let SPy = Py - Sy
-      let SPz = Pz - Sz
-
-      let magnitude = (SPx * SPx) + (SPy * SPy) + (SPz * SPz)
-      let div = this.constants.INFINITY
-      if (magnitude > 0) div = 1.0 / magnitude
-      return div * SPz
-    }
-
-    function vectorReflectX (Vx: number, Vy: number, Vz: number,
-                             Nx: number, Ny: number, Nz: number) {
-      let V1x = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nx
-      return (V1x * 2) - Vx
-    }
-
-    function vectorReflectY (Vx: number, Vy: number, Vz: number,
-                             Nx: number, Ny: number, Nz: number) {
-      let V1y = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Ny
-      return (V1y * 2) - Vy
-    }
-
-    function vectorReflectZ (Vx: number, Vy: number, Vz: number,
-                             Nx: number, Ny: number, Nz: number) {
-      let V1z = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nz
-      return (V1z * 2) - Vz
-    }
-
-    // Find the distance from the camera point to the sphere for a ray.
-    // If the ray does not intersect the sphere, return INFINITY.
-    // A ray R (with origin at E and direction V) intersecting
-    // a sphere, with center at O and radius r, at point P.
-    // v = dot_product (EO, V)
-    // discriminant = r^2 - (dot_product (EO, EO) - v^2)
-    // if (disc < 0)
-    //   no intersection
-    // else
-    //   d = sqrt (discriminant)
-    //   P = E + (v - d) * V
-    // Formula from https://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
-    function sphereIntersectionDistance (Sx: number, Sy: number, Sz: number,
-                                         radius: number,
-                                         Ex: number, Ey: number, Ez: number,
-                                         Vx: number, Vy: number, Vz: number) {
-      let EOx = Sx - Ex
-      let EOy = Sy - Ey
-      let EOz = Sz - Ez
-      let v = (EOx * Vx) + (EOy * Vy) + (EOz * Vz)
-      let discriminant = (radius * radius)
-        - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
-        + (v * v)
-      if (discriminant < 0) {
-        return this.constants.INFINITY
-      }
-      else {
-        // Length of EP.
-        return v - Math.sqrt (discriminant)
-      }
-    }
-
     /*----------------------------------------------------------------
      * Trace.
      *--------------------------------------------------------------*/
@@ -462,7 +464,7 @@ let kernel = gpu.createKernel (
       // Default canvas background colour
       this.color (0.95, 0.95, 0.95)
     }
-  }, opt ('gpu'))
+  }, opt ('cpu'))
 
 
 let canvas = kernel.getCanvas ()
