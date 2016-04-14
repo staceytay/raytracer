@@ -90,23 +90,23 @@ let kernel = gpu.createKernel (
     }
 
     function unitVectorX (Vx: number, Vy: number, Vz: number) {
-      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
       let div = this.constants.INFINITY
       if (magnitude > 0) div = 1.0 / magnitude
+      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
       return div * Vx
     }
 
     function unitVectorY (Vx: number, Vy: number, Vz: number) {
-      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
       let div = this.constants.INFINITY
       if (magnitude > 0) div = 1.0 / magnitude
+      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
       return div * Vy
     }
 
     function unitVectorZ (Vx: number, Vy: number, Vz: number) {
-      let magnitude = (Vx * Vx) + (Vy * Vy) + (Vz * Vz)
       let div = this.constants.INFINITY
       if (magnitude > 0) div = 1.0 / magnitude
+      let magnitude = Math.sqrt ((Vx * Vx) + (Vy * Vy) + (Vz * Vz))
       return div * Vz
     }
 
