@@ -146,6 +146,24 @@ let kernel = gpu.createKernel (
       return div * SPz
     }
 
+    function vectorReflectX (Vx: number, Vy: number, Vz: number,
+                             Nx: number, Ny: number, Nz: number) {
+      let V1x = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nx
+      return (V1x * 2) - Vx
+    }
+
+    function vectorReflectY (Vx: number, Vy: number, Vz: number,
+                             Nx: number, Ny: number, Nz: number) {
+      let V1y = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Ny
+      return (V1y * 2) - Vy
+    }
+
+    function vectorReflectZ (Vx: number, Vy: number, Vz: number,
+                             Nx: number, Ny: number, Nz: number) {
+      let V1z = ((Vx * Nx) + (Vy * Ny) + (Vz * Nz)) * Nz
+      return (V1z * 2) - Vz
+    }
+
     // Find the distance from the camera point to the sphere for a ray.
     // If the ray does not intersect the sphere, return INFINITY.
     // A ray R (with origin at E and direction V) intersecting
@@ -226,6 +244,7 @@ let kernel = gpu.createKernel (
       let sRed = things[closest][2]
       let sGreen = things[closest][3]
       let sBlue = things[closest][4]
+      let ambient = things[closest][7]
       let lambert = things[closest][6]
 
       // 3a. Compute Lambert shading.
@@ -289,11 +308,130 @@ let kernel = gpu.createKernel (
       let cVy = 0
       let cVz = 0
       if (specular > 0) {
+        // Reflect ray on sphere.
+        let rRayPx = px
+        let rRayPy = py
+        let rRayPz = pz
+        let rRayVx = vectorReflectX (rayVx, rayVy, rayVz, snVx, snVy, snVz)
+        let rRayVy = vectorReflectY (rayVx, rayVy, rayVz, snVx, snVy, snVz)
+        let rRayVz = vectorReflectZ (rayVx, rayVy, rayVz, snVx, snVy, snVz)
 
+        // Trace, again, to calculate reflection colour.
+        // Get first intersection, if any.
+        var closest = this.constants.THINGSCOUNT
+        var closestDistance = this.constants.INFINITY
+        for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+          let distance = sphereIntersectionDistance (
+            things[i][9], things[i][10], things[i][11], things[i][12],
+            rRayPx, rRayPy, rRayPz, rRayVx, rRayVy, rRayVz
+          )
+          if (distance < closestDistance) {
+            closest = i
+            closestDistance = distance
+          }
+        }
+
+        // Set white as the default color for rays that don't hit anything.
+        let reflectedRed = 1
+        let reflectedGreen = 1
+        let reflectedBlue = 1
+        if (closestDistance < this.constants.INFINITY) {
+          // Find point of intersection, P'.
+          let px = rRayPx + rRayVx * closestDistance
+          let py = rRayPy + rRayVy * closestDistance
+          let pz = rRayPz + rRayVz * closestDistance
+
+          /*----------------------------------------------------------
+           * Verbatim from above, except for prefixing of some
+           * variables with an r.
+           *--------------------------------------------------------*/
+          // Find sphere normal.
+          let sx = things[closest][9]
+          let sy = things[closest][10]
+          let sz = things[closest][11]
+          let sRadius = things[closest][12]
+          let snVx = sphereNormalX (sx, sy, sz, sRadius, px, py, pz)
+          let snVy = sphereNormalY (sx, sy, sz, sRadius, px, py, pz)
+          let snVz = sphereNormalZ (sx, sy, sz, sRadius, px, py, pz)
+
+          // Sphere colour and lambertian reflectance.
+          let rsRed = things[closest][2]
+          let rsGreen = things[closest][3]
+          let rsBlue = things[closest][4]
+          let rambient = things[closest][7]
+          let rlambert = things[closest][6]
+
+          // 3a. Compute Lambert shading.
+          let rlambertAmount = 0
+          if (rlambert > 0) {
+            for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
+              // Check is if light is visible on this point.
+              let LPx =  px - lights[i][0]
+              let LPy = py - lights[i][1]
+              let LPz = pz - lights[i][2]
+              let uLPx = unitVectorX (LPx, LPy, LPz)
+              let uLPy = unitVectorY (LPx, LPy, LPz)
+              let uLPz = unitVectorZ (LPx, LPy, LPz)
+
+              var closest = this.constants.THINGSCOUNT
+              var closestDistance = this.constants.INFINITY
+              for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+                // Find sphere intersection distance from light source
+                let distance = this.constants.INFINITY
+                let EOx = things[i][9] - px
+                let EOy = things[i][10] - py
+                let EOz = things[i][11] - pz
+                let v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz)
+                let radius = things[i][12]
+                let discriminant = (radius * radius)
+                  - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
+                  + (v * v)
+                if (discriminant >= 0) {
+                  // Length of EP.
+                  distance = v - Math.sqrt (discriminant)
+                }
+
+                if (distance < closestDistance) {
+                  closest = i
+                  closestDistance = distance
+                }
+              }
+
+              // If isLighted.
+              if (closestDistance > -0.005) {
+                let PLx = -LPx
+                let PLy = -LPy
+                let PLz = -LPz
+
+                let uPLx = unitVectorX (PLx, PLy, PLz)
+                let uPLy = unitVectorY (PLx, PLy, PLz)
+                let uPLz = unitVectorZ (PLx, PLy, PLz)
+
+                let contribution = vectorDotProduct (uPLx, uPLy, uPLz,
+                                                     snVx, snVy, snVz)
+
+                if (contribution > 0) rlambertAmount += contribution
+              }
+            }
+          }
+          rlambertAmount = Math.min(1, rlambertAmount)
+          /*----------------------------------------------------------
+           * End verbatim.
+           *--------------------------------------------------------*/
+          // This time, compute colours without specular.
+          reflectedRed = (rsRed * rlambertAmount * rlambert) + (rsRed * rambient)
+          reflectedGreen = (rsGreen * rlambertAmount * rlambert) + (rsGreen * rambient)
+          reflectedBlue = (rsBlue * rlambertAmount * rlambert) + (rsBlue * rambient)
+          // End trace for specular.
+
+          // Combine reflected colour.
+          cVx = cVx + (specular * reflectedRed)
+          cVy = cVy + (specular * reflectedGreen)
+          cVz = cVz + (specular * reflectedBlue)
+        }
       }
 
       // 3c. Combine and set colour at point.
-      let ambient = things[closest][7]
       let red = cVx + (sRed * lambertAmount * lambert) + (sRed * ambient)
       let green = cVy + (sGreen * lambertAmount * lambert) + (sGreen * ambient)
       let blue = cVz + (sBlue * lambertAmount * lambert) + (sBlue * ambient)
