@@ -259,7 +259,7 @@ let kernel = gpu.createKernel (
           let uLPy = unitVectorY (LPx, LPy, LPz)
           let uLPz = unitVectorZ (LPx, LPy, LPz)
 
-          var closest = this.constants.THINGSCOUNT
+          // var closest = this.constants.THINGSCOUNT
           var closestDistance = this.constants.INFINITY
           for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
             // Find sphere intersection distance from light source
@@ -278,7 +278,7 @@ let kernel = gpu.createKernel (
             }
 
             if (distance < closestDistance) {
-              closest = i
+              // closest = i
               closestDistance = distance
             }
           }
