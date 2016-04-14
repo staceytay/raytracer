@@ -253,8 +253,7 @@ let kernel = gpu.createKernel (
             let discriminant = (radius * radius)
               - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
               + (v * v)
-            // if (discriminant >= 0) {
-            if (discriminant > 0) {
+            if (discriminant >= 0) {
               // Length of EP.
               distance = v - Math.sqrt (discriminant)
             }
