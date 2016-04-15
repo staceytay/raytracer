@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>CS3211 Project 2 - Ray Tracing</title>
+    <title>GPU.js Raytracer</title>
     <meta name="author" content="Stacey Tay">
-    <meta name="description" content="A raytracing program implemented in CPU.js">
+    <meta name="description" content="A simple raytracer built with CPU.js.">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
 
     <style>
@@ -23,7 +23,7 @@
       }
       #container {
         margin: auto;
-        max-width: 800px;
+        max-width: 600px;
       }
     </style>
   </head>
@@ -31,12 +31,22 @@
   <body>
     <div id="container">
       <div class="center">
+        <p>
+          A simple raytracer with Lambertian and specular reflection,
+          built with <a href="http://gpu.rocks/">GPU.js</a>. Code
+          available
+          on <a href="https://github.com/staceytay/raytracer/">GitHub</a>.
+        </p>
+      </div>
+      <div class="center">
         <label for="cpu"><input type="radio" name="mode" value="cpu" id="cpu" />CPU</label>
         <label for="gpu"><input type="radio" name="mode" value="gpu" id="gpu" />GPU</label>
       </div>
       <div class="center">
         <input type="button" value="Pause" onclick="togglePause ()" id="pause" />
-        <div id="fps"></div>
+      </div>
+      <div class="center">
+        <span id="fps"></span><span> fps</span>
       </div>
     </div>
     <script src="vendor/gpu.min.js"></script>
