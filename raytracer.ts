@@ -44,7 +44,7 @@ let stringOfMode = (mode: Mode) => {
   }
 }
 
-const height = 600
+const height = (window.innerWidth < 600) ? (window.innerWidth - 20) : 600
 const width = height
 const initialMode = Mode.CPU
 
