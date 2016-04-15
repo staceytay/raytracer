@@ -47,7 +47,7 @@ var stringOfMode = function (mode) {
         case 0: return 'gpu';
     }
 };
-var height = 600;
+var height = (window.innerWidth < 600) ? (window.innerWidth - 20) : 600;
 var width = height;
 var initialMode = 1;
 var camera = [
