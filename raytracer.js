@@ -183,7 +183,7 @@ var kernelFunctions = [
 ];
 kernelFunctions.forEach(function (f) { return gpu.addFunction(f); });
 var createKernel = function (mode) {
-    var kernel = gpu.createKernel(function (camera, lights, things, eyeV, rightV, upV, halfHeight, halfWidth, pixelHeight, pixelWidth) {
+    var kernel = gpu.createKernel(function (camera, lights, things, eyeV, rightV, upV, halfHeight, halfWidth, pixelHeight, pixelWidth, lambertianReflectance, specularReflection) {
         var x = this.thread.x;
         var y = this.thread.y;
         var rayPx = camera[0];
@@ -227,7 +227,7 @@ var createKernel = function (mode) {
             var ambient = things[closest][7];
             var lambert = things[closest][6];
             var lambertAmount = 0;
-            if (lambert > 0) {
+            if (lambertianReflectance > 0 && lambert > 0) {
                 for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
                     var LPx = px - lights[i][0];
                     var LPy = py - lights[i][1];
@@ -266,12 +266,13 @@ var createKernel = function (mode) {
                     }
                 }
             }
-            lambertAmount = Math.min(1, lambertAmount);
+            if (lambertianReflectance > 0)
+                lambertAmount = Math.min(1, lambertAmount);
             var specular = things[closest][5];
             var cVx = 0;
             var cVy = 0;
             var cVz = 0;
-            if (specular > 0) {
+            if (specularReflection > 0 && specular > 0) {
                 var rRayPx = px;
                 var rRayPy = py;
                 var rRayPz = pz;
@@ -307,7 +308,7 @@ var createKernel = function (mode) {
                     var rambient = things[closest][7];
                     var rlambert = things[closest][6];
                     var rlambertAmount = 0;
-                    if (rlambert > 0) {
+                    if (lambertianReflectance > 0 && rlambert > 0) {
                         for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
                             var LPx = px_1 - lights[i][0];
                             var LPy = py_1 - lights[i][1];
@@ -348,7 +349,8 @@ var createKernel = function (mode) {
                             }
                         }
                     }
-                    rlambertAmount = Math.min(1, rlambertAmount);
+                    if (lambertianReflectance > 0)
+                        rlambertAmount = Math.min(1, rlambertAmount);
                     reflectedRed = (rsRed * rlambertAmount * rlambert) + (rsRed * rambient);
                     reflectedGreen = (rsGreen * rlambertAmount * rlambert) + (rsGreen * rambient);
                     reflectedBlue = (rsBlue * rlambertAmount * rlambert) + (rsBlue * rambient);
@@ -419,14 +421,19 @@ var togglePause = function () {
 var f = document.getElementById('fps');
 function renderLoop() {
     f.innerHTML = fps.getFPS().toString();
+    var lambertianReflectance = (document.getElementById('lambert').checked)
+        ? 1 : 0;
+    var specularReflection = (document.getElementById('specular').checked)
+        ? 1 : 0;
     if (document.getElementById('cpu').checked) {
-        cpuKernel(camera, lights, things, eyeVector.toArray(), vpRight.toArray(), vpUp.toArray(), halfHeight, halfWidth, pixelHeight, pixelWidth);
+        cpuKernel(camera, lights, things, eyeVector.toArray(), vpRight.toArray(), vpUp.toArray(), halfHeight, halfWidth, pixelHeight, pixelWidth, lambertianReflectance, specularReflection);
+        var t2 = performance.now();
         var canvas = cpuKernel.getCanvas();
         var cv = document.getElementsByTagName('canvas')[0];
         cv.parentNode.replaceChild(canvas, cv);
     }
     else {
-        gpuKernel(camera, lights, things, eyeVector.toArray(), vpRight.toArray(), vpUp.toArray(), halfHeight, halfWidth, pixelHeight, pixelWidth);
+        gpuKernel(camera, lights, things, eyeVector.toArray(), vpRight.toArray(), vpUp.toArray(), halfHeight, halfWidth, pixelHeight, pixelWidth, lambertianReflectance, specularReflection);
         var canvas = gpuKernel.getCanvas();
         var cv = document.getElementsByTagName('canvas')[0];
         cv.parentNode.replaceChild(canvas, cv);

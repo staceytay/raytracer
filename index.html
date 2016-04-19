@@ -39,8 +39,12 @@
         </p>
       </div>
       <div class="center">
-        <label for="cpu"><input type="radio" name="mode" value="cpu" id="cpu" />CPU</label>
-        <label for="gpu"><input type="radio" name="mode" value="gpu" id="gpu" />GPU</label>
+        <label for="cpu"><input type="radio" name="mode" value="cpu" id="cpu">CPU</label>
+        <label for="gpu"><input type="radio" name="mode" value="gpu" id="gpu">GPU</label>
+      </div>
+      <div class="center">
+        <label for="lambert"><input checked="checked" type="checkbox" id="lambert" value="lambert">Lambertian reflectance</label><br>
+        <label for="specular"><input checked="checked" type="checkbox" id="specular" value="specular">Specular reflection</label>
       </div>
       <div class="center">
         <input type="button" value="Pause" onclick="togglePause ()" id="pause" />
