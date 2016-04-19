@@ -235,7 +235,8 @@ let createKernel = (mode) => {
     function (camera: number[], lights: number[][], things: number[][],
               eyeV: number[], rightV: number[], upV: number[],
               halfHeight: number, halfWidth: number,
-              pixelHeight: number, pixelWidth: number) {
+              pixelHeight: number, pixelWidth: number,
+              lambertianReflectance: number, specularReflection: number) {
       /*--------------------------------------------------------------
        * Trace.
        *------------------------------------------------------------*/
@@ -303,7 +304,7 @@ let createKernel = (mode) => {
 
         // 3a. Compute Lambert shading.
         let lambertAmount = 0
-        if (lambert > 0) {
+        if (lambertianReflectance > 0 && lambert > 0) {
           for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
             // Check is if light is visible on this point.
             let LPx =  px - lights[i][0]
@@ -354,14 +355,15 @@ let createKernel = (mode) => {
             }
           }
         }
-        lambertAmount = Math.min(1, lambertAmount)
+        if (lambertianReflectance > 0)
+          lambertAmount = Math.min (1, lambertAmount)
 
         // 3b. Compute specular reflection.
         let specular = things[closest][5]
         let cVx = 0
         let cVy = 0
         let cVz = 0
-        if (specular > 0) {
+        if (specularReflection > 0 && specular > 0) {
           // Reflect ray on sphere.
           let rRayPx = px
           let rRayPy = py
@@ -417,7 +419,7 @@ let createKernel = (mode) => {
 
             // 3a. Compute Lambert shading.
             let rlambertAmount = 0
-            if (rlambert > 0) {
+            if (lambertianReflectance > 0 && rlambert > 0) {
               for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
                 // Check is if light is visible on this point.
                 let LPx =  px - lights[i][0]
@@ -468,7 +470,8 @@ let createKernel = (mode) => {
                 }
               }
             }
-            rlambertAmount = Math.min(1, rlambertAmount)
+            if (lambertianReflectance > 0)
+              rlambertAmount = Math.min (1, rlambertAmount)
             /*--------------------------------------------------------
              * End verbatim.
              *------------------------------------------------------*/
@@ -566,10 +569,17 @@ let f = document.getElementById('fps')
 function renderLoop () {
   f.innerHTML = fps.getFPS ().toString ()
 
+  let lambertianReflectance = (document.getElementById('lambert').checked)
+    ? 1 : 0
+  let specularReflection = (document.getElementById('specular').checked)
+    ? 1 : 0
+
   if (document.getElementById('cpu').checked) {
     cpuKernel (camera, lights, things,
                eyeVector.toArray (), vpRight.toArray (), vpUp.toArray (),
-               halfHeight, halfWidth, pixelHeight, pixelWidth)
+               halfHeight, halfWidth, pixelHeight, pixelWidth,
+               lambertianReflectance, specularReflection)
+    let t2 = performance.now ()
     let canvas = cpuKernel.getCanvas ()
     let cv = document.getElementsByTagName('canvas')[0]
     cv.parentNode.replaceChild (canvas, cv)
@@ -577,7 +587,8 @@ function renderLoop () {
   else {
     gpuKernel (camera, lights, things,
                eyeVector.toArray (), vpRight.toArray (), vpUp.toArray (),
-               halfHeight, halfWidth, pixelHeight, pixelWidth)
+               halfHeight, halfWidth, pixelHeight, pixelWidth,
+               lambertianReflectance, specularReflection)
     let canvas = gpuKernel.getCanvas ()
     let cv = document.getElementsByTagName('canvas')[0]
     cv.parentNode.replaceChild (canvas, cv)
