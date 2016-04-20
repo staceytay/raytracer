@@ -235,25 +235,25 @@ var createKernel = function (mode) {
                     var uLPx = unitVectorX(LPx, LPy, LPz);
                     var uLPy = unitVectorY(LPx, LPy, LPz);
                     var uLPz = unitVectorZ(LPx, LPy, LPz);
-                    var closestDistance = this.constants.INFINITY;
-                    for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+                    var closestDistance_1 = this.constants.INFINITY;
+                    for (var j = 0; j < this.constants.THINGSCOUNT; j++) {
                         var distance = this.constants.INFINITY;
-                        var EOx = things[i][9] - px;
-                        var EOy = things[i][10] - py;
-                        var EOz = things[i][11] - pz;
+                        var EOx = things[j][9] - px;
+                        var EOy = things[j][10] - py;
+                        var EOz = things[j][11] - pz;
                         var v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz);
-                        var radius = things[i][12];
+                        var radius = things[j][12];
                         var discriminant = (radius * radius)
                             - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                             + (v * v);
                         if (discriminant >= 0) {
                             distance = v - Math.sqrt(discriminant);
                         }
-                        if (distance < closestDistance) {
-                            closestDistance = distance;
+                        if (distance < closestDistance_1) {
+                            closestDistance_1 = distance;
                         }
                     }
-                    if (closestDistance > -0.005) {
+                    if (closestDistance_1 > -0.005) {
                         var PLx = -LPx;
                         var PLy = -LPy;
                         var PLz = -LPz;
@@ -279,34 +279,34 @@ var createKernel = function (mode) {
                 var rRayVx = vectorReflectX(rayVx, rayVy, rayVz, snVx, snVy, snVz);
                 var rRayVy = vectorReflectY(rayVx, rayVy, rayVz, snVx, snVy, snVz);
                 var rRayVz = vectorReflectZ(rayVx, rayVy, rayVz, snVx, snVy, snVz);
-                var closest = this.constants.THINGSCOUNT;
-                var closestDistance = this.constants.INFINITY;
+                var closest_1 = this.constants.THINGSCOUNT;
+                var closestDistance_2 = this.constants.INFINITY;
                 for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
                     var distance = sphereIntersectionDistance(things[i][9], things[i][10], things[i][11], things[i][12], rRayPx, rRayPy, rRayPz, rRayVx, rRayVy, rRayVz);
-                    if (distance < closestDistance) {
-                        closest = i;
-                        closestDistance = distance;
+                    if (distance < closestDistance_2) {
+                        closest_1 = i;
+                        closestDistance_2 = distance;
                     }
                 }
                 var reflectedRed = 1;
                 var reflectedGreen = 1;
                 var reflectedBlue = 1;
-                if (closestDistance < this.constants.INFINITY) {
-                    var px_1 = rRayPx + rRayVx * closestDistance;
-                    var py_1 = rRayPy + rRayVy * closestDistance;
-                    var pz_1 = rRayPz + rRayVz * closestDistance;
-                    var sx_1 = things[closest][9];
-                    var sy_1 = things[closest][10];
-                    var sz_1 = things[closest][11];
-                    var sRadius_1 = things[closest][12];
+                if (closestDistance_2 < this.constants.INFINITY) {
+                    var px_1 = rRayPx + rRayVx * closestDistance_2;
+                    var py_1 = rRayPy + rRayVy * closestDistance_2;
+                    var pz_1 = rRayPz + rRayVz * closestDistance_2;
+                    var sx_1 = things[closest_1][9];
+                    var sy_1 = things[closest_1][10];
+                    var sz_1 = things[closest_1][11];
+                    var sRadius_1 = things[closest_1][12];
                     var snVx_1 = sphereNormalX(sx_1, sy_1, sz_1, sRadius_1, px_1, py_1, pz_1);
                     var snVy_1 = sphereNormalY(sx_1, sy_1, sz_1, sRadius_1, px_1, py_1, pz_1);
                     var snVz_1 = sphereNormalZ(sx_1, sy_1, sz_1, sRadius_1, px_1, py_1, pz_1);
-                    var rsRed = things[closest][2];
-                    var rsGreen = things[closest][3];
-                    var rsBlue = things[closest][4];
-                    var rambient = things[closest][7];
-                    var rlambert = things[closest][6];
+                    var rsRed = things[closest_1][2];
+                    var rsGreen = things[closest_1][3];
+                    var rsBlue = things[closest_1][4];
+                    var rambient = things[closest_1][7];
+                    var rlambert = things[closest_1][6];
                     var rlambertAmount = 0;
                     if (lambertianReflectance > 0 && rlambert > 0) {
                         for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
@@ -316,27 +316,25 @@ var createKernel = function (mode) {
                             var uLPx = unitVectorX(LPx, LPy, LPz);
                             var uLPy = unitVectorY(LPx, LPy, LPz);
                             var uLPz = unitVectorZ(LPx, LPy, LPz);
-                            var closest = this.constants.THINGSCOUNT;
-                            var closestDistance = this.constants.INFINITY;
-                            for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+                            var closestDistance_3 = this.constants.INFINITY;
+                            for (var j = 0; j < this.constants.THINGSCOUNT; j++) {
                                 var distance = this.constants.INFINITY;
-                                var EOx = things[i][9] - px_1;
-                                var EOy = things[i][10] - py_1;
-                                var EOz = things[i][11] - pz_1;
+                                var EOx = things[j][9] - px_1;
+                                var EOy = things[j][10] - py_1;
+                                var EOz = things[j][11] - pz_1;
                                 var v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz);
-                                var radius = things[i][12];
+                                var radius = things[j][12];
                                 var discriminant = (radius * radius)
                                     - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                                     + (v * v);
                                 if (discriminant >= 0) {
                                     distance = v - Math.sqrt(discriminant);
                                 }
-                                if (distance < closestDistance) {
-                                    closest = i;
-                                    closestDistance = distance;
+                                if (distance < closestDistance_3) {
+                                    closestDistance_3 = distance;
                                 }
                             }
-                            if (closestDistance > -0.005) {
+                            if (closestDistance_3 > -0.005) {
                                 var PLx = -LPx;
                                 var PLy = -LPy;
                                 var PLz = -LPz;
