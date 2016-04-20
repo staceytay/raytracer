@@ -266,9 +266,9 @@ let createKernel = (mode) => {
       let rayVz = unitVectorZ (sumVx, sumVy, sumVz)
 
       // 2. Get first intersection, if any.
-      var closest = this.constants.THINGSCOUNT
-      var closestDistance = this.constants.INFINITY
-      for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+      let closest = this.constants.THINGSCOUNT
+      let closestDistance = this.constants.INFINITY
+      for (let i = 0; i < this.constants.THINGSCOUNT; i++) {
         let distance = sphereIntersectionDistance (
           things[i][9], things[i][10], things[i][11], things[i][12],
           rayPx, rayPy, rayPz, rayVx, rayVy, rayVz
@@ -305,7 +305,7 @@ let createKernel = (mode) => {
         // 3a. Compute Lambert shading.
         let lambertAmount = 0
         if (lambertianReflectance > 0 && lambert > 0) {
-          for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
+          for (let i = 0; i < this.constants.LIGHTSCOUNT; i++) {
             // Check is if light is visible on this point.
             let LPx =  px - lights[i][0]
             let LPy = py - lights[i][1]
@@ -314,16 +314,15 @@ let createKernel = (mode) => {
             let uLPy = unitVectorY (LPx, LPy, LPz)
             let uLPz = unitVectorZ (LPx, LPy, LPz)
 
-            // var closest = this.constants.THINGSCOUNT
-            var closestDistance = this.constants.INFINITY
-            for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+            let closestDistance = this.constants.INFINITY
+            for (let j = 0; j < this.constants.THINGSCOUNT; j++) {
               // Find sphere intersection distance from light source
               let distance = this.constants.INFINITY
-              let EOx = things[i][9] - px
-              let EOy = things[i][10] - py
-              let EOz = things[i][11] - pz
+              let EOx = things[j][9] - px
+              let EOy = things[j][10] - py
+              let EOz = things[j][11] - pz
               let v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz)
-              let radius = things[i][12]
+              let radius = things[j][12]
               let discriminant = (radius * radius)
                 - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                 + (v * v)
@@ -333,7 +332,6 @@ let createKernel = (mode) => {
               }
 
               if (distance < closestDistance) {
-                // closest = i
                 closestDistance = distance
               }
             }
@@ -374,9 +372,9 @@ let createKernel = (mode) => {
 
           // Trace, again, to calculate reflection colour.
           // Get first intersection, if any.
-          var closest = this.constants.THINGSCOUNT
-          var closestDistance = this.constants.INFINITY
-          for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+          let closest = this.constants.THINGSCOUNT
+          let closestDistance = this.constants.INFINITY
+          for (let i = 0; i < this.constants.THINGSCOUNT; i++) {
             let distance = sphereIntersectionDistance (
               things[i][9], things[i][10], things[i][11], things[i][12],
               rRayPx, rRayPy, rRayPz, rRayVx, rRayVy, rRayVz
@@ -420,7 +418,7 @@ let createKernel = (mode) => {
             // 3a. Compute Lambert shading.
             let rlambertAmount = 0
             if (lambertianReflectance > 0 && rlambert > 0) {
-              for (var i = 0; i < this.constants.LIGHTSCOUNT; i++) {
+              for (let i = 0; i < this.constants.LIGHTSCOUNT; i++) {
                 // Check is if light is visible on this point.
                 let LPx =  px - lights[i][0]
                 let LPy = py - lights[i][1]
@@ -429,16 +427,15 @@ let createKernel = (mode) => {
                 let uLPy = unitVectorY (LPx, LPy, LPz)
                 let uLPz = unitVectorZ (LPx, LPy, LPz)
 
-                var closest = this.constants.THINGSCOUNT
-                var closestDistance = this.constants.INFINITY
-                for (var i = 0; i < this.constants.THINGSCOUNT; i++) {
+                let closestDistance = this.constants.INFINITY
+                for (let j = 0; j < this.constants.THINGSCOUNT; j++) {
                   // Find sphere intersection distance from light source
                   let distance = this.constants.INFINITY
-                  let EOx = things[i][9] - px
-                  let EOy = things[i][10] - py
-                  let EOz = things[i][11] - pz
+                  let EOx = things[j][9] - px
+                  let EOy = things[j][10] - py
+                  let EOz = things[j][11] - pz
                   let v = (EOx * uLPx) + (EOy * uLPy) + (EOz * uLPz)
-                  let radius = things[i][12]
+                  let radius = things[j][12]
                   let discriminant = (radius * radius)
                     - ((EOx * EOx) + (EOy * EOy) + (EOz * EOz))
                     + (v * v)
@@ -448,7 +445,6 @@ let createKernel = (mode) => {
                   }
 
                   if (distance < closestDistance) {
-                    closest = i
                     closestDistance = distance
                   }
                 }
