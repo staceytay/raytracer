@@ -96,17 +96,17 @@ let constants = {
   THINGSCOUNT: things.length,
 }
 
-let opt = (mode: Mode) => {
+let opt = () => {
   return {
     constants: constants,
     debug: true,
-    dimensions: [width, height],
+    output: [width, height],
     graphical: true,
-    mode: stringOfMode (mode),
     safeTextureReadHack: false,
   }
 }
 
+let cpu = new GPU ({ mode: 'cpu' })
 let gpu = new GPU ()
 /*----------------------------------------------------------------
  * Helper functions for use within the kernel.
@@ -231,7 +231,7 @@ let kernelFunctions = [
 kernelFunctions.forEach(f => gpu.addFunction(f))
 
 let createKernel = (mode) => {
-  let kernel = gpu.createKernel (
+  let kernel = (stringOfMode(mode) === 'cpu' ? cpu : gpu).createKernel (
     function (camera: number[], lights: number[][], things: number[][],
               eyeV: number[], rightV: number[], upV: number[],
               halfHeight: number, halfWidth: number,
@@ -495,7 +495,7 @@ let createKernel = (mode) => {
         // Default canvas background colour
         this.color (0.95, 0.95, 0.95)
       }
-    }, opt (mode))
+    }, opt ())
 
   return kernel
 }
