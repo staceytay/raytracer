@@ -1,10 +1,13 @@
-# Raytracer—http://staceytay.com/raytracer/
+# raytracer
 
-A simple ray tracer built with [GPU.js](http://gpu.rocks/). Read about how I came to build this at http://staceytay.com/2016/04/20/a-parallelized-ray-tracer-in-the-browser.html.
+An in-browser ray tracer with Lambertian and specular reflection. Built with [GPU.js](http://gpu.rocks/).
 
-## Setup
+[Blog post](https://stace.dev/a-parallelized-ray-tracer-in-the-browser/) on using GPU.js to build a ray tracer. [Live demo](https://staceytay.com/raytracer/).
 
-```
-stacey@Staceys-MBP ~/R/raytracer (master)> tsc
-stacey@Staceys-MBP ~/R/raytracer (master)> open index.html
+## Installing
+
+```bash
+> npm install -g typescript
+> tsc
+> open index.html
 ```
